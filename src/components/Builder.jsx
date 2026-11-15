@@ -1,14 +1,16 @@
 
 import { useMemo, useState } from "react";
 import "./Builder.css";
-
+import EngineeringAdvisor from "./EngineeringAdvisor";
+import { runEngineeringAnalysis } from "../engine/engineAdapter";
 // TEMPORARY GAMEPLAY DATA
-// These values are illustrative and must be replaced
-// with researched specifications before final submission.
+// These values are illustrative gameplay assumptions,
+// not verified flight hardware specifications.
 
 const components = [
   {
     id: "structure-1",
+    slot: "structure",
     name: "Standard CubeSat Structure",
     category: "Structure",
     description: "A basic structure that holds and protects the satellite systems.",
@@ -18,6 +20,7 @@ const components = [
   },
   {
     id: "power-1",
+    slot: "solar",
     name: "Basic Solar Panels",
     category: "Power",
     description: "Solar panels that provide electrical power during sunlight.",
@@ -28,6 +31,7 @@ const components = [
   },
   {
     id: "battery-1",
+    slot: "battery",
     name: "Standard Battery",
     category: "Power",
     description: "Stores electrical energy for periods without sunlight.",
@@ -38,6 +42,7 @@ const components = [
   },
   {
     id: "camera-1",
+    slot: "payload",
     name: "Basic Earth Camera",
     category: "Payload",
     description: "A basic optical camera for Earth observation.",
@@ -48,6 +53,7 @@ const components = [
   },
   {
     id: "camera-2",
+    slot: "payload",
     name: "Advanced Earth Camera",
     category: "Payload",
     description: "A higher-performance camera with increased resource demands.",
@@ -58,6 +64,7 @@ const components = [
   },
   {
     id: "computer-1",
+    slot: "computer",
     name: "Onboard Computer",
     category: "Computing",
     description: "Processes commands and manages spacecraft operations.",
@@ -68,6 +75,7 @@ const components = [
   },
   {
     id: "communication-1",
+    slot: "communication",
     name: "Basic Communication System",
     category: "Communication",
     description: "Enables the satellite to communicate with a ground station.",
@@ -78,6 +86,7 @@ const components = [
   },
   {
     id: "communication-2",
+    slot: "communication",
     name: "Advanced Communication System",
     category: "Communication",
     description: "A higher-performance system for transmitting mission data.",
@@ -147,6 +156,8 @@ function Builder({ onProceed }) {
     );
   }, [selectedComponents]);
 
+  // ADD OR REPLACE COMPONENT
+
   const addComponent = (component) => {
     setSelectedComponents((current) => {
       const alreadyAdded = current.some(
@@ -155,7 +166,13 @@ function Builder({ onProceed }) {
 
       if (alreadyAdded) return current;
 
-      return [...current, component];
+      // Keep only one component in each slot.
+      // Solar panels and batteries have separate slots.
+      const updatedComponents = current.filter(
+        (item) => item.slot !== component.slot
+      );
+
+      return [...updatedComponents, component];
     });
   };
 
@@ -195,11 +212,11 @@ function Builder({ onProceed }) {
   );
 
   const hasSolarPanels = selectedComponents.some(
-    (component) => component.id === "power-1"
+    (component) => component.slot === "solar"
   );
 
   const hasBattery = selectedComponents.some(
-    (component) => component.id === "battery-1"
+    (component) => component.slot === "battery"
   );
 
   const hasComputer = selectedComponents.some(
@@ -226,16 +243,11 @@ function Builder({ onProceed }) {
   // DATA SYSTEM ANALYSIS
 
   const storageAvailable = totals.storageCapacityGB;
-
-  const dataGenerationRate =
-    totals.dataGenerationMBPerMinute;
-
+  const dataGenerationRate = totals.dataGenerationMBPerMinute;
   const downlinkSpeed = totals.downlinkSpeedMbps;
 
   const hasStorage = storageAvailable > 0;
-
   const hasDataGeneration = dataGenerationRate > 0;
-
   const hasDownlink = downlinkSpeed > 0;
 
   // MISSION REQUIREMENTS
@@ -321,6 +333,18 @@ function Builder({ onProceed }) {
       </div>
 
       <div className="builder-layout">
+        <EngineeringAdvisor
+  selectedComponents={selectedComponents}
+  totals={totals}
+  solarPower={solarPower}
+  powerBalance={powerBalance}
+  powerSufficient={powerSufficient}
+  storageAvailable={storageAvailable}
+  dataGenerationRate={dataGenerationRate}
+  downlinkSpeed={downlinkSpeed}
+  maxMass={MAX_MASS}
+  maxBudget={MAX_BUDGET}
+/>
         <div className="builder-main">
           <div className="builder-section-heading">
             <div>
@@ -353,6 +377,12 @@ function Builder({ onProceed }) {
                 (item) => item.id === component.id
               );
 
+              const hasAlternativeSelected = selectedComponents.some(
+                (item) =>
+                  item.slot === component.slot &&
+                  item.id !== component.id
+              );
+
               return (
                 <article
                   className={`component-card ${
@@ -366,7 +396,11 @@ function Builder({ onProceed }) {
                     </span>
 
                     <span className="component-indicator">
-                      {isSelected ? "ADDED" : "AVAILABLE"}
+                      {isSelected
+                        ? "ADDED"
+                        : hasAlternativeSelected
+                          ? "ALTERNATIVE"
+                          : "AVAILABLE"}
                     </span>
                   </div>
 
@@ -462,7 +496,11 @@ function Builder({ onProceed }) {
                         : addComponent(component)
                     }
                   >
-                    {isSelected ? "REMOVE COMPONENT −" : "ADD COMPONENT +"}
+                    {isSelected
+                      ? "REMOVE COMPONENT −"
+                      : hasAlternativeSelected
+                        ? "REPLACE SELECTED SYSTEM ↻"
+                        : "ADD COMPONENT +"}
                   </button>
                 </article>
               );
@@ -666,8 +704,6 @@ function Builder({ onProceed }) {
             </span>
           </div>
 
-          {/* NEW DATA SYSTEM RESOURCES */}
-
           <div className="resource-card">
             <div className="resource-top">
               <span>Battery Capacity</span>
@@ -706,7 +742,7 @@ function Builder({ onProceed }) {
             </div>
 
             <span className="resource-hint">
-              Combined observation data generation rate
+              Observation data generation rate
             </span>
           </div>
 
@@ -720,7 +756,7 @@ function Builder({ onProceed }) {
             </div>
 
             <span className="resource-hint">
-              Combined communication data rate
+              Communication data rate
             </span>
           </div>
 
@@ -804,20 +840,28 @@ function Builder({ onProceed }) {
           <button
             className="component-action"
             disabled={!isValid}
-            onClick={() =>
-              onProceed({
-                selectedComponents,
-                totals,
-                requirements,
-                completionPercentage,
-                solarPower,
-                powerBalance,
-                powerSufficient,
-                storageAvailable,
-                dataGenerationRate,
-                downlinkSpeed,
-              })
-            }
+           onClick={() => {
+  try {
+    const engineAnalysis = runEngineeringAnalysis(selectedComponents);
+
+    onProceed({
+      selectedComponents,
+      totals,
+      requirements,
+      completionPercentage,
+      solarPower,
+      powerBalance,
+      powerSufficient,
+      storageAvailable,
+      dataGenerationRate,
+      downlinkSpeed,
+      engineAnalysis,
+    });
+  } catch (error) {
+    console.error("Engineering Engine Error:", error);
+    alert(`Engineering analysis failed: ${error.message}`);
+  }
+}}
             style={{
               width: "100%",
               marginTop: "12px",
