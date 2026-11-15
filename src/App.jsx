@@ -3,6 +3,7 @@ import { useState } from "react";
 import "./App.css";
 import Builder from "./components/Builder";
 import MissionSimulation from "./components/MissionSimulation";
+import { runEngineeringWhatIf } from "./engine/engineAdapter";
 const features = [
   {
     number: "01",
@@ -38,6 +39,15 @@ function App() {
   const solarPower = missionReport?.solarPower ?? 0;
   const powerBalance = missionReport?.powerBalance ?? 0;
   const powerSufficient = missionReport?.powerSufficient ?? false;
+  const engineAnalysis = missionReport?.engineAnalysis;
+  const cameraUpgrade = missionReport?.selectedComponents?.some((item) => item.id === "camera-1")
+    ? missionReport.selectedComponents.map((item) => item.id === "camera-1"
+        ? { ...item, id: "camera-2", name: "Advanced Earth Camera", mass: 0.8, cost: 220, power: 5, dataGenerationMBPerMinute: 20 }
+        : item)
+    : null;
+  const whatIfResult = cameraUpgrade && engineAnalysis
+    ? runEngineeringWhatIf(missionReport.selectedComponents, cameraUpgrade)
+    : null;
 
   return (
     <main className="app">
@@ -338,6 +348,41 @@ function App() {
                 <li>Store and transmit the collected data.</li>
               </ul>
             </article>
+            {engineAnalysis && (
+              <>
+                <article className="briefing-card">
+                  <span className="card-index">06 / ENGINEERING ENGINE</span>
+                  <h2>{engineAnalysis.mission.mission} — {engineAnalysis.status}</h2>
+                  <div className="objective-highlight">
+                    <span>MISSION DESIGN SCORE</span>
+                    <strong>{engineAnalysis.score.total.toFixed(1)} / 100 · GRADE {engineAnalysis.score.grade}</strong>
+                  </div>
+                  <div className="parameter-list">
+                    <div><span>Calculated mass</span><strong>{engineAnalysis.mission.metrics.totalMassKg.toFixed(2)} kg</strong></div>
+                    <div><span>Average power margin</span><strong>{engineAnalysis.mission.metrics.powerMarginW.toFixed(2)} W</strong></div>
+                    <div><span>Battery energy</span><strong>{engineAnalysis.mission.metrics.batteryEnergyWh.toFixed(1)} Wh</strong></div>
+                    <div><span>Daily data volume</span><strong>{engineAnalysis.mission.metrics.dataPerDayGB.toFixed(2)} GB</strong></div>
+                    <div><span>Game budget remaining</span><strong>{engineAnalysis.mission.metrics.budgetCreditsRemaining.toFixed(0)} CR</strong></div>
+                  </div>
+                  {engineAnalysis.violations.map((item) => <p className="assumption-note" key={item}>⚠ {item}</p>)}
+                  {engineAnalysis.warnings.map((item) => <p className="assumption-note" key={item}>ⓘ {item}</p>)}
+                </article>
+                {whatIfResult && (
+                  <article className="briefing-card">
+                    <span className="card-index">07 / WHAT-IF TRADE STUDY</span>
+                    <h2>UPGRADE TO ADVANCED CAMERA</h2>
+                    <p>Compare the current design with an advanced camera while keeping every other selected subsystem unchanged.</p>
+                    <div className="parameter-list">
+                      <div><span>Mass change</span><strong>{whatIfResult.comparison.totalMassKg.absolute > 0 ? "+" : ""}{whatIfResult.comparison.totalMassKg.absolute.toFixed(2)} kg</strong></div>
+                      <div><span>Science score change</span><strong>+{whatIfResult.comparison.scienceScore.absolute.toFixed(0)}</strong></div>
+                      <div><span>Budget change</span><strong>+{whatIfResult.comparison.budgetCredits.absolute.toFixed(0)} CR</strong></div>
+                      <div><span>New mission status</span><strong>{whatIfResult.after.status}</strong></div>
+                    </div>
+                    <p className="assumption-note">{whatIfResult.interpretation}</p>
+                  </article>
+                )}
+              </>
+            )}
           </div>
 
           <div className="briefing-footer">

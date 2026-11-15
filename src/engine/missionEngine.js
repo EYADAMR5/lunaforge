@@ -107,6 +107,7 @@ export function calculateMission(selection, constraints = MISSION_BASELINE) {
     selectedComponentIds: components.map(c => c.id),
     metrics: {
       totalMassKg,
+      targetMassKg: constraints.targetMassKg,
       massMarginKg: constraints.maxMassKg - totalMassKg,
       targetMassMarginKg: constraints.targetMassKg - totalMassKg,
       averageGenerationW: averageGeneration,
@@ -120,6 +121,7 @@ export function calculateMission(selection, constraints = MISSION_BASELINE) {
       storageGb,
       storageUtilizationPercent: storageGb ? (dataPerDayGB / storageGb) * 100 : 0,
       budgetCredits: componentCostCredits,
+      budgetCreditsRemaining: constraints.budgetCredits - componentCostCredits,
       budgetRemainingCredits: constraints.budgetCredits - componentCostCredits,
       scienceScore: cameras.reduce((n, c) => n + (Number(c.scienceScore) || 0), 0),
       imagesPerDay

@@ -14,9 +14,9 @@ const components = [
     name: "Standard CubeSat Structure",
     category: "Structure",
     description: "A basic structure that holds and protects the satellite systems.",
-    mass: 0.8,
+    mass: 1.4,
     power: 0,
-    cost: 900,
+    cost: 120,
   },
   {
     id: "power-1",
@@ -24,10 +24,10 @@ const components = [
     name: "Basic Solar Panels",
     category: "Power",
     description: "Solar panels that provide electrical power during sunlight.",
-    mass: 0.6,
+    mass: 0.45,
     power: 0,
-    solarPowerOutput: 6,
-    cost: 1500,
+    solarPowerOutput: 27.8,
+    cost: 140,
   },
   {
     id: "battery-1",
@@ -35,10 +35,10 @@ const components = [
     name: "Standard Battery",
     category: "Power",
     description: "Stores electrical energy for periods without sunlight.",
-    mass: 0.4,
+    mass: 0.35,
     power: 0,
-    batteryCapacityWh: 20,
-    cost: 800,
+    batteryCapacityWh: 44,
+    cost: 100,
   },
   {
     id: "camera-1",
@@ -47,9 +47,9 @@ const components = [
     category: "Payload",
     description: "A basic optical camera for Earth observation.",
     mass: 0.5,
-    power: 2,
+    power: 3,
     dataGenerationMBPerMinute: 8,
-    cost: 1800,
+    cost: 120,
   },
   {
     id: "camera-2",
@@ -57,10 +57,10 @@ const components = [
     name: "Advanced Earth Camera",
     category: "Payload",
     description: "A higher-performance camera with increased resource demands.",
-    mass: 0.9,
-    power: 4,
+    mass: 0.8,
+    power: 5,
     dataGenerationMBPerMinute: 20,
-    cost: 3200,
+    cost: 220,
   },
   {
     id: "computer-1",
@@ -68,10 +68,10 @@ const components = [
     name: "Onboard Computer",
     category: "Computing",
     description: "Processes commands and manages spacecraft operations.",
-    mass: 0.3,
-    power: 1,
-    storageCapacityGB: 2,
-    cost: 1200,
+    mass: 0.4,
+    power: 2,
+    storageCapacityGB: 32,
+    cost: 100,
   },
   {
     id: "communication-1",
@@ -79,10 +79,10 @@ const components = [
     name: "Basic Communication System",
     category: "Communication",
     description: "Enables the satellite to communicate with a ground station.",
-    mass: 0.4,
-    power: 2,
+    mass: 0.35,
+    power: 5,
     downlinkSpeedMbps: 1,
-    cost: 1300,
+    cost: 100,
   },
   {
     id: "communication-2",
@@ -91,10 +91,15 @@ const components = [
     category: "Communication",
     description: "A higher-performance system for transmitting mission data.",
     mass: 0.6,
-    power: 3,
+    power: 10,
     downlinkSpeedMbps: 2,
-    cost: 2100,
+    cost: 220,
   },
+  { id: "power-2", slot: "solar", name: "6U Deployable Solar Array", category: "Power", description: "Deployable array with a higher peak-power rating; game values are simplified.", mass: 0.78, power: 0, solarPowerOutput: 57.6, cost: 200 },
+  { id: "battery-2", slot: "battery", name: "High-capacity Battery Pack", category: "Power", description: "Higher energy storage for eclipse and peak-load support.", mass: 0.52, power: 0, batteryCapacityWh: 88.8, cost: 180 },
+  { id: "adcs-1", slot: "adcs", name: "Basic Attitude Control (ADCS)", category: "Attitude Control", description: "Determines and controls spacecraft orientation for Earth observation.", mass: 0.6, power: 2, cost: 100 },
+  { id: "adcs-2", slot: "adcs", name: "Precision Attitude Control (ADCS)", category: "Attitude Control", description: "Higher precision pointing with increased resource demand.", mass: 1.0, power: 5, cost: 200 },
+  { id: "eps-1", slot: "eps", name: "Electrical Power Management (EPS)", category: "Electrical Power", description: "Regulates and distributes electrical power across spacecraft systems.", mass: 0.4, power: 1, cost: 80 },
 ];
 
 const categories = [
@@ -104,10 +109,12 @@ const categories = [
   "Payload",
   "Computing",
   "Communication",
+  "Attitude Control",
+  "Electrical Power",
 ];
 
-const MAX_MASS = 4;
-const MAX_BUDGET = 10000;
+const MAX_MASS = 12;
+const MAX_BUDGET = 1000;
 
 function Builder({ onProceed }) {
   const [selectedComponents, setSelectedComponents] = useState([]);
@@ -223,6 +230,10 @@ function Builder({ onProceed }) {
     (component) => component.category === "Computing"
   );
 
+  const hasAdcs = selectedComponents.some((component) => component.slot === "adcs");
+
+  const hasEps = selectedComponents.some((component) => component.slot === "eps");
+
   const hasCommunication = selectedComponents.some(
     (component) => component.category === "Communication"
   );
@@ -259,6 +270,10 @@ function Builder({ onProceed }) {
     { label: "Energy storage battery", complete: hasBattery },
     { label: "Observation payload", complete: hasPayload },
     { label: "Onboard computer", complete: hasComputer },
+    { label: "Attitude control (ADCS)", complete: selectedComponents.some((c) => c.slot === "adcs") },
+    { label: "Electrical power management (EPS)", complete: selectedComponents.some((c) => c.slot === "eps") },
+    { label: "Attitude determination and control (ADCS)", complete: selectedComponents.some((component) => component.slot === "adcs") },
+    { label: "Electrical power management (EPS)", complete: selectedComponents.some((component) => component.slot === "eps") },
     { label: "Communication system", complete: hasCommunication },
     { label: "Data storage", complete: hasStorage },
     { label: "Data generation", complete: hasDataGeneration },
@@ -287,7 +302,7 @@ function Builder({ onProceed }) {
     (hasSolarPanels && !powerSufficient);
 
   const isValid =
-    !isInvalid &&
+    !isInvalid && hasAdcs && hasEps &&
     completedRequirements === requirements.length;
 
   const missionStatus = isInvalid
@@ -410,6 +425,10 @@ function Builder({ onProceed }) {
                     {component.category === "Payload" && "◎"}
                     {component.category === "Computing" && "⌘"}
                     {component.category === "Communication" && "⌁"}
+                    {component.category === "Attitude Control" && "◎"}
+                    {component.category === "Electrical Power" && "ϟ"}
+                    {component.category === "Attitude Control" && "◎"}
+                    {component.category === "Electrical Power" && "ϟ"}
                   </div>
 
                   <h3>{component.name}</h3>
