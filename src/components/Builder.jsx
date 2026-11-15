@@ -270,6 +270,8 @@ function Builder({ onProceed }) {
     { label: "Energy storage battery", complete: hasBattery },
     { label: "Observation payload", complete: hasPayload },
     { label: "Onboard computer", complete: hasComputer },
+    { label: "Attitude control (ADCS)", complete: selectedComponents.some((c) => c.slot === "adcs") },
+    { label: "Electrical power management (EPS)", complete: selectedComponents.some((c) => c.slot === "eps") },
     { label: "Attitude determination and control (ADCS)", complete: selectedComponents.some((component) => component.slot === "adcs") },
     { label: "Electrical power management (EPS)", complete: selectedComponents.some((component) => component.slot === "eps") },
     { label: "Communication system", complete: hasCommunication },
@@ -423,6 +425,8 @@ function Builder({ onProceed }) {
                     {component.category === "Payload" && "◎"}
                     {component.category === "Computing" && "⌘"}
                     {component.category === "Communication" && "⌁"}
+                    {component.category === "Attitude Control" && "◎"}
+                    {component.category === "Electrical Power" && "ϟ"}
                     {component.category === "Attitude Control" && "◎"}
                     {component.category === "Electrical Power" && "ϟ"}
                   </div>
