@@ -19,8 +19,9 @@ function powerEfficiency(m) {
   return clamp((m.powerMarginW / m.averageGenerationW) * 100 + 50);
 }
 
-function budgetEfficiency(m) {
-  return clamp((m.budgetCreditsRemaining / m.budgetCredits) * 100);
+function budgetEfficiency(m, constraints) {
+  if (!constraints.budgetCredits) return 0;
+  return clamp((m.budgetCreditsRemaining / constraints.budgetCredits) * 100);
 }
 
 function storageEfficiency(m) {
@@ -62,7 +63,7 @@ export function calculateMissionScore(mission) {
   const resourceEfficiency = (
     massEfficiency(m) * 0.35 +
     powerEfficiency(m) * 0.35 +
-    budgetEfficiency(m) * 0.20 +
+    budgetEfficiency(m, mission.constraints) * 0.20 +
     storageEfficiency(m) * 0.10
   );
   const technicalFeasibility = technicalScore(mission);
