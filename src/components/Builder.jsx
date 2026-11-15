@@ -16,7 +16,7 @@ const components = [
     description: "A basic structure that holds and protects the satellite systems.",
     mass: 1.4,
     power: 0,
-    cost: 100,
+    cost: 120,
   },
   {
     id: "power-1",
@@ -49,7 +49,7 @@ const components = [
     mass: 0.5,
     power: 3,
     dataGenerationMBPerMinute: 8,
-    cost: 100,
+    cost: 120,
   },
   {
     id: "camera-2",
